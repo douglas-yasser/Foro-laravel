@@ -1,38 +1,34 @@
-# Usa una imagen base con PHP, Composer y extensiones necesarias
-FROM php:8.3-fpm
+# Imagen base de PHP con Composer y extensiones necesarias
+FROM php:8.3-cli
 
-# Instala dependencias del sistema
+# Instala dependencias del sistema y extensiones PHP
 RUN apt-get update && apt-get install -y \
-    git unzip libpng-dev libonig-dev libxml2-dev sqlite3 libsqlite3-dev && \
-    docker-php-ext-install pdo pdo_sqlite mbstring exif pcntl bcmath gd
+    git unzip libzip-dev sqlite3 libsqlite3-dev \
+    && docker-php-ext-install pdo pdo_sqlite zip
 
-# Copia Composer desde la imagen oficial
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Instala Composer globalmente
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Copia el código del proyecto
-COPY . /var/www/html
-
+# Establece el directorio de trabajo
 WORKDIR /var/www/html
 
-# Instala dependencias de Laravel
+# Copia el contenido del proyecto al contenedor
+COPY . .
+
+# Instala las dependencias de Laravel (sin dev)
 RUN composer install --no-dev --optimize-autoloader
 
-# Crea el archivo SQLite y un .env temporal para el build
+# Crea el archivo SQLite y genera la clave de la app
+# NOTA: Render no incluye .env, pero Laravel usa variables del entorno automáticamente.
 RUN mkdir -p /var/www/html/database && \
     touch /var/www/html/database/database.sqlite && \
-    echo "APP_KEY=" >> /var/www/html/.env && \
-    echo "DB_CONNECTION=sqlite" >> /var/www/html/.env && \
-    echo "DB_DATABASE=/var/www/html/database/database.sqlite" >> /var/www/html/.env && \
-    php artisan key:generate --force && \
-    php artisan migrate --force
+    php artisan key:generate --ansi || true
 
-# Da permisos
-RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database
-
-# Expone el puerto que Render usa
+# Expone el puerto 10000 (Render lo usa automáticamente)
 EXPOSE 10000
 
-# Comando para iniciar Laravel
+# Comando para iniciar Laravel en Render
 CMD php artisan serve --host=0.0.0.0 --port=10000
+
 
 
