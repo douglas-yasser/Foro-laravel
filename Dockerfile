@@ -1,36 +1,36 @@
-# Imagen base con PHP 8.3 y Composer
+# Usa la imagen base oficial de PHP con las extensiones necesarias
 FROM php:8.3-cli
 
-# Instala dependencias necesarias
+# Instala dependencias del sistema y extensiones necesarias para Laravel
 RUN apt-get update && apt-get install -y \
-    git unzip libzip-dev sqlite3 libsqlite3-dev \
-    && docker-php-ext-install pdo pdo_sqlite zip
+    git unzip libpng-dev libonig-dev libxml2-dev sqlite3 libsqlite3-dev nodejs npm && \
+    docker-php-ext-install pdo pdo_sqlite bcmath
 
-# Instala Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-
-# Directorio de trabajo
+# Configura el directorio de trabajo
 WORKDIR /var/www/html
 
 # Copia los archivos del proyecto
 COPY . .
 
-# Instala dependencias de Laravel
-RUN composer install --no-dev --optimize-autoloader
+# Instala dependencias de Composer
+RUN curl -sS https://getcomposer.org/installer | php && \
+    php composer.phar install --no-dev --optimize-autoloader
 
-# Crea carpetas necesarias y asigna permisos
-RUN mkdir -p /var/www/html/database \
-    && touch /var/www/html/database/database.sqlite \
-    && chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database
+# Compila los assets de Vite
+RUN npm install && npm run build
 
-# Exponer el puerto 10000 (Render usa este)
+# Crea la base de datos SQLite y ejecuta las migraciones
+RUN mkdir -p /var/www/html/database && \
+    touch /var/www/html/database/database.sqlite && \
+    php artisan key:generate && \
+    php artisan migrate --force
+
+# Expone el puerto que Render usará (10000)
 EXPOSE 10000
 
-# Ejecutar migraciones si es necesario y arrancar el servidor
-CMD php artisan key:generate --ansi \
-    && php artisan migrate --force \
-    || php artisan migrate:fresh --seed --force \
-    && php artisan serve --host=0.0.0.0 --port=10000
+# Comando de inicio
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=10000"]
+
 
 
 
