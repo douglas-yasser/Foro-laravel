@@ -1,64 +1,38 @@
-FROM php:8.3-cli
+# Usa una imagen base con PHP, Composer y extensiones necesarias
+FROM php:8.3-fpm
 
-# Instalar dependencias del sistema
+# Instala dependencias del sistema
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
-    unzip \
-    sqlite3 \
-    libsqlite3-dev \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    git unzip libpng-dev libonig-dev libxml2-dev sqlite3 libsqlite3-dev && \
+    docker-php-ext-install pdo pdo_sqlite mbstring exif pcntl bcmath gd
 
-# Instalar extensiones de PHP
-RUN docker-php-ext-install pdo_sqlite mbstring exif pcntl bcmath gd
-
-# Instalar Composer
+# Copia Composer desde la imagen oficial
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Crear directorio de trabajo
-WORKDIR /app
+# Copia el código del proyecto
+COPY . /var/www/html
 
-# Copiar archivos del proyecto
-COPY . .
+WORKDIR /var/www/html
 
-# Copiar .env.example a .env
-RUN cp .env.example .env
+# Instala dependencias de Laravel
+RUN composer install --no-dev --optimize-autoloader
 
-# Instalar dependencias de Composer
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Crea el archivo SQLite y un .env temporal para el build
+RUN mkdir -p /var/www/html/database && \
+    touch /var/www/html/database/database.sqlite && \
+    echo "APP_KEY=" >> /var/www/html/.env && \
+    echo "DB_CONNECTION=sqlite" >> /var/www/html/.env && \
+    echo "DB_DATABASE=/var/www/html/database/database.sqlite" >> /var/www/html/.env && \
+    php artisan key:generate --force && \
+    php artisan migrate --force
 
-# Generar APP_KEY
-RUN php artisan key:generate --force
+# Da permisos
+RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database
 
-# Crear directorios necesarios
-RUN mkdir -p database \
-    storage/framework/sessions \
-    storage/framework/views \
-    storage/framework/cache/data \
-    bootstrap/cache
+# Expone el puerto que Render usa
+EXPOSE 10000
 
-# Crear base de datos SQLite
-RUN touch database/database.sqlite
+# Comando para iniciar Laravel
+CMD php artisan serve --host=0.0.0.0 --port=10000
 
-# Configurar permisos
-RUN chmod -R 775 storage bootstrap/cache database
-
-# Ejecutar migraciones
-RUN php artisan migrate --force --no-interaction
-
-# Optimizar Laravel
-RUN php artisan config:cache && \
-    php artisan route:cache && \
-    php artisan view:cache
-
-# Exponer puerto
-EXPOSE 8000
-
-# Comando de inicio
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
 
