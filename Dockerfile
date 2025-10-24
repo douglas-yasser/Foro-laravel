@@ -18,10 +18,15 @@ WORKDIR /var/www/html
 RUN composer install --no-dev --optimize-autoloader
 
 # Crea el archivo SQLite automáticamente y ejecuta migraciones
+# Crea el archivo SQLite y un .env temporal para el build
 RUN mkdir -p /var/www/html/database && \
     touch /var/www/html/database/database.sqlite && \
-    php artisan key:generate && \
+    echo "APP_KEY=" >> /var/www/html/.env && \
+    echo "DB_CONNECTION=sqlite" >> /var/www/html/.env && \
+    echo "DB_DATABASE=/var/www/html/database/database.sqlite" >> /var/www/html/.env && \
+    php artisan key:generate --force && \
     php artisan migrate --force
+
 
 # Da permisos
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database
