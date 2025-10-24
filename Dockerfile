@@ -1,35 +1,34 @@
-# Usa PHP con Apache
-FROM php:8.3-apache
+# Usa una imagen base con PHP, Composer y extensiones necesarias
+FROM php:8.3-fpm
 
-# Instala dependencias necesarias
+# Instala dependencias del sistema
 RUN apt-get update && apt-get install -y \
-    git unzip libpng-dev libonig-dev libxml2-dev zip libzip-dev \
-    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd
+    git unzip libpng-dev libonig-dev libxml2-dev sqlite3 libsqlite3-dev && \
+    docker-php-ext-install pdo pdo_sqlite mbstring exif pcntl bcmath gd
 
-# Copia Composer desde su imagen oficial
+# Copia Composer desde la imagen oficial
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copia todo el proyecto
+# Copia el código del proyecto
 COPY . /var/www/html
 
-# Establece directorio de trabajo
 WORKDIR /var/www/html
 
-# Crea un archivo .env si no existe
-RUN if [ ! -f .env ]; then cp .env.example .env || touch .env; fi
-
-# Instala dependencias sin las de desarrollo
+# Instala dependencias de Laravel
 RUN composer install --no-dev --optimize-autoloader
 
-# Da permisos a storage y cache
-RUN chmod -R 775 storage bootstrap/cache
+# Crea el archivo SQLite automáticamente y ejecuta migraciones
+RUN mkdir -p /var/www/html/database && \
+    touch /var/www/html/database/database.sqlite && \
+    php artisan key:generate && \
+    php artisan migrate --force
 
-# Genera la APP_KEY
-RUN php artisan key:generate || true
+# Da permisos
+RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database
 
-# Expone el puerto 10000 (Render lo usa)
+# Expone el puerto que Render usa
 EXPOSE 10000
 
-# Comando de inicio
+# Comando para iniciar Laravel
 CMD php artisan serve --host=0.0.0.0 --port=10000
 
