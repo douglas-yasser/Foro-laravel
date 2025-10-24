@@ -1,0 +1,70 @@
+> npx concurrently -c "#93c5fd,#c4b5fd,#fb7185,#fdba74" "php artisan serve" "php artisan queue:listen --tries=1" "php artisan pai
+> npx concurrently -c "#93c5fd,#c4b5fd,#fb7185,#fdba74" "php artisan serve" "php artisan queue:listen --tries=1" "php artisan pail --timeout=0" "npm run dev" --names=server,queue,logs,vite --kill-others
+[vite] 
+[vite] > dev
+[vite] > vite
+[vite] 
+[logs] 
+[logs]    INFO  Tailing application logs.                        Press Ctrl+C to exit  
+[queue] 
+[queue]    INFO  Processing jobs from the [default] queue.  
+[queue] 
+[logs]                                                Use -v|-vv to show more details  
+[server] 
+[server]    INFO  Server running on [http://127.0.0.1:8000].  
+[server] 
+[server]   Press Ctrl+C to stop the server
+[server] 
+[vite] 
+[vite]   VITE v7.0.6  ready in 696 ms
+[vite] 
+[vite]   ➜  Local:   http://localhost:5173/
+[vite]   ➜  Network: use --host to expose
+[vite] 
+[vite]   LARAVEL v12.28.1  plugin v2.0.0
+[vite] 
+[vite]   ➜  APP_URL: http://web-2.test
+[server]   2025-09-25 12:09:09 / ............................................ ~ 0.46ms
+[server]   2025-09-25 12:09:09 /favicon.ico ............................... ~ 501.89ms
+[server]   2025-09-25 12:12:58 / ........................................... ~ 23.55ms
+[server]   2025-09-25 12:12:58 /favicon.ico ..................................... ~ 3s
+[server]   2025-09-25 12:13:09 / ............................................ ~ 0.06ms
+[server]   2025-09-25 12:13:09 /favicon.ico ................................. ~ 0.91ms
+[queue] 
+[queue]    Symfony\Component\Process\Exception\ProcessTimedOutException 
+[queue] 
+[queue]   The process "'/Users/rafaelovalle/Library/Application Support/Herd/bin/php84' 'artisan' 'queue:work' '--once' '--name=d
+[queue]   The process "'/Users/rafaelovalle/Library/Application Support/Herd/bin/php84' 'artisan' 'queue:work' '--once' '--name=default' '--queue=default' '--backoff=0' '--memory=128' '--sleep=3' '--tries=1'" exceeded the timeout of 60 seconds.
+[queue] 
+[queue]   at vendor/symfony/process/Process.php:1181
+[queue]     1177▕ 
+[queue]     1178▕         if (null !== $this->timeout && $this->timeout < microtime(true) - $this->starttime) {
+[queue]     1179▕             $this->stop(0);
+[queue]     1180▕ 
+[queue]   ➜ 1181▕             throw new ProcessTimedOutException($this, ProcessTimedOutException::TYPE_GENERAL);
+[queue]     1182▕         }
+[queue]     1183▕ 
+[queue]     1184▕         if (null !== $this->idleTimeout && $this->idleTimeout < microtime(true) - $this->lastOutputTime) {
+[queue]     1185▕             $this->stop(0);
+[queue] 
+[queue]       +18 vendor frames 
+[queue] 
+[queue]   19  artisan:16
+[queue]       Illuminate\Foundation\Application::handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
+[queue] 
+[logs] ┌ 18:15:21 Symfony\Component\...\ProcessTimedOutException ── vendor/symfony/pro... ┐
+[logs] │ The process "'/Users/rafaelovalle/Library/Application Support/Herd/bin/php8... │
+[logs] └──────────────────────────────────────────────────────── artisan queue:listen ┘
+[queue] php artisan queue:listen --tries=1 exited with code 1
+--> Sending SIGTERM to other processes..
+[server] php artisan serve exited with code 0
+--> Sending SIGTERM to other processes..
+[logs] 
+[logs] php artisan pail --timeout=0 exited with code 0
+--> Sending SIGTERM to other processes..
+[vite] npm run dev exited with code 0
+Script npx concurrently -c "#93c5fd,#c4b5fd,#fb7185,#fdba74" "php artisan serve" "php artisan queue:listen --tries=1" "php artisa
+Script npx concurrently -c "#93c5fd,#c4b5fd,#fb7185,#fdba74" "php artisan serve" "php artisan queue:listen --tries=1" "php artisan pail --timeout=0" "npm run dev" --names=server,queue,logs,vite --kill-others handling the dev event returned with error code 1
+
+
+
