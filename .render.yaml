@@ -3,6 +3,5 @@ services:
     name: foro-laravel
     env: docker
     plan: free
-    branch: main
-    autoDeploy: true
-
+    region: oregon
+    dockerfilePath: ./Dockerfile
