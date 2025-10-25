@@ -1,4 +1,4 @@
-# Usa la imagen base oficial de PHP con las extensiones necesarias
+# Usa la imagen base oficial de PHP con extensiones necesarias
 FROM php:8.3-cli
 
 # Instala dependencias del sistema
@@ -15,28 +15,36 @@ COPY . .
 # Copia el .env.example y renómbralo
 COPY .env.example .env
 
-# Instala dependencias PHP
+# Configura APP_URL para producción
+# IMPORTANTE: cambia esto a tu URL real
+RUN sed -i "s|APP_URL=.*|APP_URL=https://foro-laravel-3.onrender.com|" .env
+
+# Instala dependencias PHP con Composer
 RUN curl -sS https://getcomposer.org/installer | php && \
     php composer.phar install --no-dev --optimize-autoloader
 
-# Instala dependencias Node y construye assets (Vite)
+# Instala Node.js y genera assets con Vite
 RUN npm install && npm run build && ls -la public/build
 
-# Crea base de datos SQLite
+# Crea base de datos SQLite si no existe
 RUN mkdir -p database && touch database/database.sqlite
 
 # Genera APP_KEY y ejecuta migraciones
 RUN php artisan key:generate
 RUN php artisan migrate --force
 
-# Limpia caché de Laravel (opcional pero recomendado)
+# Limpia caché de Laravel
 RUN php artisan config:clear && php artisan view:clear && php artisan cache:clear
 
 # Expone el puerto que Render usará
 EXPOSE 10000
 
-# Comando para ejecutar Laravel
+# Forzar HTTPS en producción mediante AppServiceProvider
+RUN echo "<?php\n\nnamespace App\Providers;\n\nuse Illuminate\Support\ServiceProvider;\nuse Illuminate\Support\Facades\URL;\n\nclass AppServiceProvider extends ServiceProvider\n{\n    public function register(): void {}\n\n    public function boot(): void\n    {\n        if (config('app.env') === 'production') {\n            URL::forceScheme('https');\n        }\n    }\n}" > app/Providers/AppServiceProvider.php
+
+# Comando de inicio de Laravel
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=10000"]
+
 
 
 
