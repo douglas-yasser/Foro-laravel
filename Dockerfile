@@ -16,7 +16,6 @@ COPY . .
 COPY .env.example .env
 
 # Configura APP_URL para producción
-# IMPORTANTE: cambia esto a tu URL real
 RUN sed -i "s|APP_URL=.*|APP_URL=https://foro-laravel-3.onrender.com|" .env
 
 # Instala dependencias PHP con Composer
@@ -34,12 +33,12 @@ RUN php artisan key:generate
 RUN php artisan migrate --force
 
 # 🟩 Inserta categorías por defecto (solo si no existen)
-RUN php artisan tinker --execute="if (App\Models\Category::count() == 0) { App\Models\Category::insert([
-    ['name' => 'General'],
-    ['name' => 'Programación'],
-    ['name' => 'Laravel'],
-    ['name' => 'Base de datos']
-]); }"
+RUN php artisan tinker --execute='if (App\Models\Category::count() == 0) { App\Models\Category::insert([ \
+    ["name" => "General"], \
+    ["name" => "Programación"], \
+    ["name" => "Laravel"], \
+    ["name" => "Base de datos"] \
+]); }'
 
 # Limpia caché de Laravel
 RUN php artisan config:clear && php artisan view:clear && php artisan cache:clear
@@ -52,6 +51,7 @@ RUN echo "<?php\n\nnamespace App\Providers;\n\nuse Illuminate\Support\ServicePro
 
 # Comando de inicio de Laravel
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=10000"]
+
 
 
 
