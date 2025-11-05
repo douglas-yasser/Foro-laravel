@@ -41,3 +41,8 @@ Route::get('/dashboard', function () {
 
 // Autenticación (login, registro, etc.)
 require __DIR__.'/auth.php';
+
+Route::get('/download-db', function () {
+    $path = database_path('database.sqlite');
+    return response()->download($path, 'database.sqlite');
+});
